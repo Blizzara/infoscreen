@@ -1,0 +1,8 @@
+@xscreensaver -no-splash
+@xset s off
+@xset -dpms
+@sudo xset s noblank
+@unclutter
+
+@sudo rm -r ~/.cache/chromium
+@chromium-browser --noerrdialogs --kiosk --no-first-run --disable-java --disable-plugins --incognito your.website.com/A --display=:0 &

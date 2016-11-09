@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Infoscreen</title>
+    <meta name="description" content="">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link rel="stylesheet" href="common/styles.css">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.2/lodash.min.js" integrity="sha256-Cv5v4i4SuYvwRYzIONifZjoc99CkwfncROMSWat1cVA=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="figures" class="slideshow" tabindex="1" autofocus="autofocus">
+        <figure>
+            <div class="left" id="main">
+                <div id="program">
+                    <ul id="programlist">
+                    </ul>
+                </div>
+                <div id="note"></div>
+                <div id="info">
+                    <div id="logo">
+                        <img alt="LOGO" />
+                    </div>
+                    <div>
+                        <p>General info here</p>
+                        <p>github.com/Blizzara/infoscreen</p>
+                    </div>
+                </div>
+            </div>
+            <div class="right" id="image">
+            </div>
+        </figure>
+    </div>
+
+    <script>
+        class SlideShow {
+            constructor(selector) {
+                this.el = $(selector)[0];
+                this.reset();
+                this.$items[0].classList.add("slide-show");
+                this.el.onkeydown = (e) => {
+                    e = e || window.event;
+                    if (e.keyCode == 37) this.move(-1);
+                    else if (e.keyCode == 39) this.move(1);
+                }
+            }
+
+            reset() {
+                this.counter = 0;
+                this.$items = this.el.querySelectorAll("figure");
+                this.numItems = this.$items.length;
+                this.move(0);
+            }
+
+            move(dir) {
+                this.counter += dir;
+                if (this.counter >= this.numItems) {
+                    getAndUpdateContent();
+                    return;
+                }
+                if (this.counter < 0) this.counter = this.numItems - 1;
+                this.$items.forEach((b) => {
+                    b.classList.remove("slide-show")
+                });
+                this.$items[this.counter].classList.add("slide-show")
+            }
+
+            start(ms) {
+                if (this.interval) window.clearInterval(this.interval);
+                this.interval = window.setInterval(() => this.move(1), ms);
+            }
+        };
+
+        var slideshow = new SlideShow('.slideshow');
+
+        var NUM_OF_EVENTS = 5;
+
+        function formatDate(str) {
+            return str.split(' ')[1];
+        }
+
+        function printEvents(events) {
+            $('#programlist').empty();
+            events.forEach((e) => {
+                var li = $('<li></li>');
+                var time = $('<span class="time"></span>').text(formatDate(e.start));
+                var event = $('<span class="event"></span>').text(e.event);
+                var location = $('<span class="location"></span>').text(e.location);
+                li.append(time, event, location);
+                $('#programlist').append(li);
+            });
+        }
+
+        function printNote(note) {
+            $('#note').empty();
+            if (note) {
+                $('#note').append($('<span></span>').text(note.text));
+            }
+        }
+
+        function printFigures(figures) {
+            $('.auto').remove();
+            figures.forEach((f) => {
+                var figure = $('<figure class="auto"></figure>');
+                figure.append(f.html);
+                $('#figures').append(figure);
+            });
+            slideshow.reset();
+        }
+
+        var data = "";
+
+        function updateContent() {
+            var now = new Date();
+            var events = _(data.schedule).orderBy((e) => e.start).filter((e) => new Date(e.end) > now).take(NUM_OF_EVENTS).value();
+            printEvents(events);
+
+            var note = _(data.notes).filter((n) => new Date(n.start) < now && new Date(n.end) > now).orderBy((n) => n.start).take(1).value()[0];
+            printNote(note);
+
+            var figures = _(data.figures).filter((n) => new Date(n.start) < now && new Date(n.end) > now).value();
+            printFigures(figures);
+        }
+
+        function getAndUpdateContent() {
+            var now = new Date();
+            $.ajax({
+                url: '../content.json?nocache=' + now.getTime(),
+                type: 'GET',
+                cache: 'false',
+                dataType: 'json',
+                success: (response) => {
+                    data = response;
+                    updateContent();
+                },
+                error: () => {
+                    updateContent();
+                }
+            });
+        }
+
+        var image = 0;
+
+        function swapImages() {
+            image = image == 1 ? 2 : 1;
+            $('#image').css("background-image", "url(img" + image + ".jpg)");
+        }
+
+        function reload() {
+            $.ajax({
+                url: '../log.php?url=' + location.pathname,
+                type: 'GET',
+                cache: 'false',
+                success: function(response) {
+                    location.reload(true);
+                }
+            })
+        }
+
+        // INIT
+        swapImages();
+        getAndUpdateContent();
+
+        var SEC = 1000;
+        var MIN = 60 * SEC;
+
+        // PARTNER CHANGE
+        setInterval(swapImages, 10 * SEC);
+
+        // CONTENT SWITCH
+        slideshow.start(20 * SEC);
+        // CONTENT UPDATE AT CYLCE END!
+
+        // TOTAL REFRESH
+        setInterval(reload, 5 * MIN);
+    </script>
+</body>
+
+</html>

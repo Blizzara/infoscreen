@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Infoscreen</title>
+    <meta name="description" content="">
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.2/lodash.min.js" integrity="sha256-Cv5v4i4SuYvwRYzIONifZjoc99CkwfncROMSWat1cVA=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th onclick="order(0)">Site</th>
+                <th onclick="order(1)">IP</th>
+                <th onclick="order(2)">Date</th>
+                <th onclick="order(2)">Elapsed</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        var orderI = 0;
+
+        function order(index) {
+            orderI = index;
+            updateView();
+        }
+        var data = "";
+
+        function updateView() {
+            var now = new Date();
+            var lines = _(data.split("\n")).map((line) => line.split("##")).filter((tokens) => tokens.length == 3).orderBy((tokens) => tokens[orderI]).value();
+
+            var tbody = $('tbody');
+            tbody.empty();
+
+            lines.forEach((tokens) => {
+                var tr = $('<tr></tr>');
+                var date = new Date(tokens[2] * 1000);
+                var datestr = date.toISOString().slice(0, -5).replace("T", " ")
+                var diff = Math.floor((now - date) / 1000);
+                var diffM = Math.floor(diff / 60);
+                var diffS = diff - diffM * 60;
+                var diffH = Math.floor(diffM / 60);
+                diffM = diffM - diffH * 60;
+                diffH = diffH > 0 ? diffH + 'h ' : '';
+                diffM = diffM > 0 ? diffM + 'm ' : '';
+                diffS = diffS + 's';
+                tr.append('<td>' + tokens[0] + '</td>');
+                tr.append('<td>' + tokens[1] + '</td>');
+                tr.append('<td>' + datestr + '</td>');
+                tr.append('<td>' + diffH + diffM + diffS + '</td>');
+                if (diff > 5 * 60 + 1) {
+                    tr.css('background-color', 'red');
+                }
+                tbody.append(tr);
+            });
+        }
+
+        function updateLog() {
+            var now = new Date();
+            $.ajax({
+                url: 'log.txt?nocache=' + now.getTime(),
+                type: 'GET',
+                cache: 'false',
+                success: function(response) {
+                    data = response;
+                    updateView();
+                },
+                error: function() {}
+            });
+        }
+        var S = 1000;
+        updateLog();
+        setInterval(updateLog, 5 * S);
+    </script>
+</body>

@@ -1,0 +1,11 @@
+# XScreenSaver Preferences File
+
+lock:		False
+nice:		10
+captureStderr:	True
+dpmsEnabled:	False
+dpmsQuickOff:	False
+
+mode:		off
+selected:	-1
+
