@@ -1,6 +1,6 @@
 # Infoscreen
 
-This repo contains an (almost) HTML-only infoscreen / digital signane solution.
+This repo contains an (almost) HTML-only infoscreen / digital signage solution.
 The solution was developed for Junction 2016.
 
 ## Setup
